@@ -12,7 +12,7 @@ namespace mtm
     public:
         Soldier() = default;//it said there was an error because there was no default c'tor
         Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team,
-                                                GridPoint coordinates = GridPoint(-1,-1));
+                                                                GridPoint coordinates);
         ~Soldier();
         // virtual void attack(const GridPoint & src_coordinates, const GridPoint & dst_coordinates);
         bool isInStraightLine(const GridPoint src_coordinates, const GridPoint dst_coordinates);
@@ -20,15 +20,15 @@ namespace mtm
         virtual void reload() override;//override needed?
         // virtual void attack(const GridPoint & dst_coordinates) override;
         virtual void attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                            const GridPoint & dst_coordinates) override;
+                                            const GridPoint & dst_coordinates, bool *can_reduce_ammo) override;
         void attackWithFullPower(std::shared_ptr<Character> target);
         void attackWithHalfPower(std::shared_ptr<Character> target);
-        Soldier& operator=(const Soldier &soldier) = default;
+        // Soldier& operator=(const Soldier &soldier) = default; // if it's default, then I believe there's no need to explicitly say it
         
     private:
         const int AMMO_RELOAD = 3;
         const int MAX_DISTANCE = 3;
-        GridPoint coordinates;
+        // GridPoint coordinates;
         friend class Character;//needed?
         // friend class Game;//needed?
 

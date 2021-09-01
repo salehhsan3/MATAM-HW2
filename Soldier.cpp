@@ -7,7 +7,7 @@ namespace mtm
 {
 //     Soldier::Soldier();
     Soldier::Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team), coordinates(coordinates)
+     : Character(health,ammo,power,range,team,coordinates)
     {
 
     };
@@ -37,46 +37,37 @@ namespace mtm
     }
 
     void Soldier::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                                const GridPoint & dst_coordinates)
+                                            const GridPoint & dst_coordinates, bool *can_reduce_ammo)
     {
         int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        if ( ( isMovingDistanceLegal(src_coordinates,dst_coordinates) == true ) 
-                && ( isInStraightLine(src_coordinates,dst_coordinates) == true) )
+        bool in_straight_line = isInStraightLine(src_coordinates,dst_coordinates);
+        if (in_straight_line == false)
         {
-            // if (distance == 0)
-            // {
-                // it means that he's attacking himself, reduce ammo and look for people nearby
-                // and give them damage in case they deserve it
-                // I believe that there is no need for this check, I can just damage people
-                // who are at a distance > 0 and < MAX_DISTANCE/3
-            // }
-            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
-            {
-                if ( (this->ammo > 0) && ( target->coordinates != this->coordinates ))
-                {
-                    (this->ammo)--;
-                    (target->health) -= power;
-                }
-                else
-                {
-                    (this->ammo)--;                
-                }
-            }
-            if ( (GridPoint::distance(target->coordinates,dst_coordinates)  <= (this->range)/3)
-                    && (GridPoint::distance(target->coordinates,dst_coordinates)  > 0) )
-            {
-                //incomplete : have to check the distances correctly,
-                // make sure to do int conversions according to what was asked!
-                if ( (this->ammo > 0) && ( target->coordinates != this->coordinates ))
-                {
-                    (this->ammo)--;
-                    (target->health) -= power/2;
-                }
-            }
-            
-               
+            throw IllegalTarget();
         }
         
+        if ( (in_straight_line == true) && (distance <= this->range) )
+        {        
+            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
+            {
+                if ( (this->ammo > 0) &&  ( target->team != this->team ) && 
+                                    ( target->coordinates != this->coordinates ) )
+                {
+                    (target->health) -= power;
+                }
+            }
+            if ( (GridPoint::distance(target->coordinates,dst_coordinates)  <= ( (this->range)/3) + (range%3) )
+                    && (GridPoint::distance(target->coordinates,dst_coordinates)  > 0) )
+            {
+                if ( (this->ammo > 0) && ( target->team != this->team ) &&
+                                    ( target->coordinates != this->coordinates ) )
+                {
+                    (target->health) -= (power/2);//need to use ceil?
+                }
+            }
+            (*can_reduce_ammo) = true;//for soldier we can attack anything therefore always reduce
+        }
+        return;
     }
 
     void Soldier::reload() 

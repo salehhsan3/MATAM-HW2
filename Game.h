@@ -22,6 +22,7 @@ namespace mtm
         std::shared_ptr<Character> findCharacterAtCoordinates(const GridPoint &coordinates);
         bool isCellOnGameBoard(const GridPoint &coordinates);
         bool isOver(Team* winningTeam=NULL) const;
+        void updaterPlayerAfterAnAttack(std::vector<std::shared_ptr<Character>> gameboard);
 
 
     private:

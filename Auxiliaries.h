@@ -40,6 +40,7 @@ namespace mtm {
             return std::abs(point1.row - point2.row)
                    + std::abs(point1.col - point2.col);
         }
+        
     };
 
 
