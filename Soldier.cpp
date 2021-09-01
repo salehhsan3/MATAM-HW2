@@ -6,8 +6,8 @@
 namespace mtm
 {
 //     Soldier::Soldier();
-    Soldier::Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team,coordinates)
+    Soldier::Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team)
+     : Character(health,ammo,power,range,team)
     {
 
     };
@@ -36,33 +36,31 @@ namespace mtm
         return false;
     }
 
-    void Soldier::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                            const GridPoint & dst_coordinates, bool *can_reduce_ammo)
+        void Soldier::attack(std::shared_ptr<Character> temp_target, std::shared_ptr<Character> main_target,
+            const GridPoint & src_coordinates, const GridPoint & dst_coordinates, bool *can_reduce_ammo)
     {
         int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        bool in_straight_line = isInStraightLine(src_coordinates,dst_coordinates);
-        if (in_straight_line == false)
+        if ( isInStraightLine(src_coordinates,dst_coordinates) == false)
         {
             throw IllegalTarget();
         }
-        
-        if ( (in_straight_line == true) && (distance <= this->range) )
+        if ( (distance <= this->range) )//already checked fo straight line above
         {        
-            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
+            if ( GridPoint::distance(temp_target->coordinates,dst_coordinates) == 0 )
             {
-                if ( (this->ammo > 0) &&  ( target->team != this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
+                if ( (this->ammo > 0) &&  ( temp_target->team != this->team ) && 
+                                    ( temp_target->coordinates != this->coordinates ) )
                 {
-                    (target->health) -= power;
+                    (temp_target->health) -= power;
                 }
             }
-            if ( (GridPoint::distance(target->coordinates,dst_coordinates)  <= ( (this->range)/3) + (range%3) )
-                    && (GridPoint::distance(target->coordinates,dst_coordinates)  > 0) )
+            if ( (GridPoint::distance(temp_target->coordinates,dst_coordinates)  <= ( (this->range)/3) + (range%3) )
+                    && (GridPoint::distance(temp_target->coordinates,dst_coordinates)  > 0) )
             {
-                if ( (this->ammo > 0) && ( target->team != this->team ) &&
-                                    ( target->coordinates != this->coordinates ) )
+                if ( (this->ammo > 0) && ( temp_target->team != this->team ) &&
+                                    ( temp_target->coordinates != this->coordinates ) )
                 {
-                    (target->health) -= (power/2);//need to use ceil?
+                    (temp_target->health) -= (power/2);//need to use ceil?
                 }
             }
             (*can_reduce_ammo) = true;//for soldier we can attack anything therefore always reduce

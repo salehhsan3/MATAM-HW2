@@ -20,13 +20,12 @@ namespace mtm
 
         public:
         Sniper() = default;//it said there was an error because there was no default c'tor
-        Sniper(units_t health, units_t ammo, units_t power, units_t range, Team team,
-                                                                GridPoint coordinates);
+        Sniper(units_t health, units_t ammo, units_t power, units_t range, Team team);
         Sniper(const Sniper& medic);   
         Sniper& operator=(const Sniper& sniper);
         virtual void reload() override;//override needed?
-        virtual void attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                            const GridPoint & dst_coordinates) override;
+        virtual void attack(std::shared_ptr<Character> temp_target, std::shared_ptr<Character> main_target,
+            const GridPoint & src_coordinates, const GridPoint & dst_coordinates, bool *can_reduce_ammo);
         bool isInStraightLine(const GridPoint src_coordinates, const GridPoint dst_coordinates);
         void attack(std::shared_ptr<Character> target, const GridPoint & dst_coordinates);
         bool isMovingDistanceLegal(const GridPoint &src_coordinates, const GridPoint &dst_coordinates);

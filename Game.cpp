@@ -37,7 +37,14 @@ namespace mtm
 
     void Game::addCharacter(const GridPoint& coordinates, std::shared_ptr<Character> character)
     {
-        //we have already created the character and we only have to add the coordinates!
+        //we have already created the character and we only have to add the coordinates! and add it to the gameboard
+        for ( std::shared_ptr<Character> i : gameboard)
+        {
+            if ( i == nullptr)
+            {
+                i = character;//correct implementation?
+            }   
+        }
         character->coordinates = coordinates;
         return;
     }
@@ -51,14 +58,16 @@ namespace mtm
             return(std::shared_ptr<Soldier>(new mtm::Soldier(health,ammo,power,range,team)));
             break;
         case MEDIC:
-            return(std::shared_ptr<Medic>(new mtm::Soldier(health,ammo,power,range,team)));
+            return(std::shared_ptr<Medic>(new mtm::Medic(health,ammo,power,range,team)));
             break;
         case SNIPER:
-            return(std::shared_ptr<Sniper>(new mtm::Soldier(health,ammo,power,range,team)));
+            return(std::shared_ptr<Sniper>(new mtm::Sniper(health,ammo,power,range,team)));
             break;            
         default:
             break;
         }
+        //should never get here, but added this extra return just so that I DON'T GET A WARNING
+        return nullptr;
     }
 
 
@@ -141,6 +150,7 @@ namespace mtm
 
     void Game::attack(const GridPoint & src_coordinates, const GridPoint & dst_coordinates)
     {
+        //need to kill some of those lines, make a function for checking errors!
         if (this->isCellOnGameBoard(src_coordinates) == false ||
                  this->isCellOnGameBoard(dst_coordinates) == false )
         {
@@ -160,18 +170,17 @@ namespace mtm
             throw OutOfAmmo();
         }        
         std::shared_ptr<Character> main_target = this->findCharacterAtCoordinates(dst_coordinates);
-        
+        bool *can_reduce_ammo = nullptr;// check what it's initialized to
         for (std::shared_ptr<Character> i : gameboard)
         {
-            attacker->attack( i , src_coordinates , dst_coordinates);//we launched the attack, May The Almighty Have Mercy Upon Us :P 
+            attacker->attack( i , main_target,src_coordinates , dst_coordinates,can_reduce_ammo);//we launched the attack, May The Almighty Have Mercy Upon Us :P 
         }
-        bool *can_reduce_ammo = nullptr;// check what it's initialized to
         //make sure to update the ammo and the gameboard after launching an attack, AKA remove any player whose health reached 0
         updaterPlayerAfterAnAttack(gameboard);
         if ( (can_reduce_ammo != nullptr) && (*can_reduce_ammo == true) )
         {
          //does the pointer makes problems?
-            Character::decrementAmmoAfterAttack( (*attacker));
+            Character::decrementAmmoAfterAttack(attacker);
         }
         //we have a problem, we don't always need to decrement the ammo after an attack as it is problematic with medic!
         return;
@@ -183,7 +192,7 @@ namespace mtm
         {
             if ( (i->health) <= 0)
             {
-                gameboard.erase(i);// correct implementation?
+                i = nullptr;
             }
             
         }
@@ -219,5 +228,11 @@ namespace mtm
             }
         }
         return result;        
+    }
+
+    std::ostream& operator<<(std::ostream& os,  const char* begin, const char* end,
+                            unsigned int width, std::vector<std::vector<char>> board)
+    {
+
     }
 };
