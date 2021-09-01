@@ -16,34 +16,32 @@ namespace mtm
 
 
 
-    void Medic::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                const GridPoint & dst_coordinates, bool *can_reduce_ammo)
+    void Medic::attack(std::shared_ptr<Character> temp_target, std::shared_ptr<Character> main_target,
+            const GridPoint & src_coordinates, const GridPoint & dst_coordinates, bool *can_reduce_ammo)
     {
         int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        if (distance == 0)
+        if (distance == 0 || main_target == nullptr)//he can't attack himself or an empty coordinate
         {
             throw IllegalTarget();
         }
-        
-        if ( (distance <= this->range) )
+        if ( (distance <= this->range) )//do I even need to check for this, because we did that in the main function in Game
         {        
-            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
+            if ( GridPoint::distance(temp_target->coordinates,dst_coordinates) == 0 )
             {
-                //need to check attacker != nullptr?
-                if ( (this->ammo > 0) &&  ( target->team != this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
+                if ( (this->ammo > 0) &&  ( temp_target->team != this->team ) && 
+                                    ( temp_target->coordinates != this->coordinates ) )
                 {
-                    (target->health) -= power;
+                    (temp_target->health) -= power;
                     (*can_reduce_ammo) = true;
                 }
             }
-            if ( (this->ammo > 0) &&  ( target->team == this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
+            if ( (this->ammo > 0) &&  ( temp_target->team == this->team ) && 
+                                    ( temp_target->coordinates != this->coordinates ) )
             {
-                if ( (this->ammo > 0) && ( target->team != this->team ) &&
-                                    ( target->coordinates != this->coordinates ) )
+                if ( (this->ammo > 0) && ( temp_target->team != this->team ) &&
+                                    ( temp_target->coordinates != this->coordinates ) )
                 {
-                    (target->health) += power;
+                    (temp_target->health) += power;
                     (*can_reduce_ammo) = false;
                 }
             }
@@ -51,8 +49,8 @@ namespace mtm
         return;
     }
 
-    Medic::Medic(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team,coordinates)
+    Medic::Medic(units_t health, units_t ammo, units_t power, units_t range, Team team)
+     : Character(health,ammo,power,range,team)
     {
 
     }

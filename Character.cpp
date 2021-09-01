@@ -23,9 +23,9 @@ namespace mtm
     Character::~Character()
     {
     }
-    void Character::decrementAmmoAfterAttack(Character &attacker)
+    void Character::decrementAmmoAfterAttack(std::shared_ptr<Character> attacker)
     {
-        (attacker.ammo)--;
+        (attacker->ammo)--;
         return;
     }
 
