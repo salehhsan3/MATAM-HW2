@@ -8,37 +8,45 @@ namespace mtm
 {
 
 
-    Game::Game(int height, int width) : height(height > 0 ? 0 : throw mtm::IllegalArgument()),
-                                            width(width > 0 ? 0 : throw mtm::IllegalArgument()),
-                            gameboard( std::vector<std::shared_ptr<Character>>( (height*width) ) )
+    Game::Game(int height, int width) : height(height),width(width),
+            gameboard( height,(std::vector<std::shared_ptr<Character>>(width,nullptr) )  )
     {
-        // if (height <= 0 || width <= 0)
-        // {
-        //     throw IllegalArgument();
-        // }
-        // is it better to throw the exception at initialization list?
+        if (height <= 0 || width <= 0)
+        {
+            throw IllegalArgument();//correct implementation or is it better to do this at initialization list
+        }
     }
     
     Game::~Game()
     {
-        //make sure to go over the entire gameboard, i.e the vector and deallocate the memory in each shared_ptr
-        // for (std::shared_ptr<Character> i : gameboard)
-        // {
-        //     // std::vector<std::shared_ptr<Character>>::iterator to_free = i;
-        //     // since we have a shared_ptr we probably can just put nullptr in it's place and the count will reach 0
-        //     // resulting in the deallocating the characters!
-        //     (i) = nullptr;//correct implementation?
-        // }
-        //if I understood correctly, the destructor of vector destroys our shared_ptrs, assuming
-        // that they're only stored there!
+
     }
 
 
 
     void Game::addCharacter(const GridPoint& coordinates, std::shared_ptr<Character> character)
     {
-        //we have already created the character and we only have to add the coordinates!
-        character->coordinates = coordinates;
+        if (isCellOnGameBoard(coordinates) == false)
+        {
+            throw IllegalCell();
+        }
+        std::shared_ptr<Character> character_at_wanted_dst = findCharacterAtCoordinates(coordinates);
+        if (character_at_wanted_dst != nullptr)
+        {
+            throw CellOccupied();
+        }
+        character->coordinates = coordinates;//update the character's location!
+        for ( int i = 0; i < this->height; i++)
+        {
+            for ( int j = 0; j < this->width; j++ )
+            {
+                GridPoint point = GridPoint(i,j);
+                if ( point == coordinates)
+                {
+                    this->gameboard[i][j] = character;//correct implementation?
+                }              
+            } 
+        }
         return;
     }
 
@@ -51,87 +59,107 @@ namespace mtm
             return(std::shared_ptr<Soldier>(new mtm::Soldier(health,ammo,power,range,team)));
             break;
         case MEDIC:
-            return(std::shared_ptr<Medic>(new mtm::Soldier(health,ammo,power,range,team)));
+            return(std::shared_ptr<Medic>(new mtm::Medic(health,ammo,power,range,team)));
             break;
         case SNIPER:
-            return(std::shared_ptr<Sniper>(new mtm::Soldier(health,ammo,power,range,team)));
+            return(std::shared_ptr<Sniper>(new mtm::Sniper(health,ammo,power,range,team)));
             break;            
         default:
             break;
         }
+        //should never get here, but added this extra return just so that I DON'T GET A WARNING
+        return nullptr;
     }
 
 
     void Game::move(const GridPoint & src_coordinates,  const GridPoint & dst_coordinates)
     {
-        if (isCellOcupied(dst_coordinates) == true)
+        if( !(isCellOnGameBoard(src_coordinates) && isCellOnGameBoard(dst_coordinates)) )
+        {
+            throw IllegalCell();
+        }
+        std::shared_ptr<Character> to_be_moved = findCharacterAtCoordinates(src_coordinates);
+        if (to_be_moved == nullptr)
+        {
+            throw CellEmpty();
+        }
+        
+        Character& character_to_be_moved = *to_be_moved;
+        if (character_to_be_moved.isMovingDistanceLegal(src_coordinates,dst_coordinates) == false)
+        {
+            throw MoveTooFar();
+        }
+        
+        std::shared_ptr<Character> move_to = findCharacterAtCoordinates(dst_coordinates);
+        if (move_to != nullptr)
         {
             throw CellOccupied();
-            return;
         }
-        for (std::shared_ptr<Character> i : gameboard)
-        {
-            if ( (i)->coordinates == src_coordinates)
-            {
-                if ((i)->isMovingDistanceLegal(src_coordinates,dst_coordinates) == true)//correct implementation?
-                {
-                    (i)->coordinates = dst_coordinates;
-                    return;
-                }
-                else
-                {
-                    //otherwise it means that he's trying to move a distance larger than range!
-                    throw MoveTooFar();
-                    return;
-                }
-            }
-        }
-        //if we are here it means that we didn't find any characters at src_coordinates, threfore:
-        throw CellEmpty();
+        //if we got to this point, it means that we're allowed to move this character!
+        to_be_moved->coordinates = dst_coordinates;
+        this->gameboard[src_coordinates.row][src_coordinates.col] = nullptr;
+        this->gameboard[dst_coordinates.row][dst_coordinates.col] = to_be_moved;
         return;
     }
 
     void Game::reload(const GridPoint & coordinates)
     {
-        for ( std::shared_ptr<Character> i : gameboard)
+        if(isCellOnGameBoard(coordinates) == false)
         {
-            if ( (i)->coordinates == coordinates)
-            {
-                (i)->reload();//correct implementation?
-            }
+            throw IllegalCell();
         }
+        std::shared_ptr<Character> targeted_reload = findCharacterAtCoordinates(coordinates);
+        if (targeted_reload == nullptr)
+        {
+            throw CellEmpty();
+        }
+        targeted_reload->reload();
+        return;
     }
 
     bool Game::isCellOcupied(const GridPoint &dst_coordinates)
     {
-        for (std::shared_ptr<Character> i : gameboard)
+        std::shared_ptr<Character> wanted = findCharacterAtCoordinates(dst_coordinates);
+        if (wanted == nullptr)
         {
-            if ( (i)->coordinates == dst_coordinates )
-            {
-                return true;
-            }
+            return false;
         }
-        return false;         
+        return true;         
     }
 
     // a function that resturn a pointer to the character that's at dst_coordinates, otherwise it returns nullptr
     std::shared_ptr<Character> Game::findCharacterAtCoordinates(const GridPoint &dst_coordinates)
     {
-        for(std::shared_ptr<Character> i : gameboard)
+        // for ( std::vector<std::shared_ptr<Character>> row_vectors : gameboard)
+        // {
+        //     for (std::shared_ptr<Character> i : row_vectors)
+        //     {
+        //         if ( i->coordinates == dst_coordinates )
+        //         {
+        //             return (i);
+        //         }              
+        //     } 
+        // }
+        // return (nullptr);
+        for(int i = 0; i < this->height; i++)
         {
-            if ( i->coordinates == dst_coordinates )
+            for(int j = 0; j < this->width; j++)
             {
-                return (i);
+                GridPoint point = GridPoint(i,j);
+                if ( point == dst_coordinates )
+                {
+                    return(this->gameboard[i][j]);
+                }
             }
         }
         return (nullptr);
     }
 
-        bool Game::isCellOnGameBoard(const GridPoint &coordinates)
+    bool Game::isCellOnGameBoard(const GridPoint &coordinates)
     {
-        if ( (coordinates.row < height) && (coordinates.row >= 0) )
+        if ( (coordinates.row < this->height ) && (coordinates.row >= 0) )
         {
-            if ( (coordinates.col < width) && (coordinates.col >= 0) )
+            if ( (coordinates.col < this->width) && (coordinates.col >= 0) )
             {
                 return true;
             } 
@@ -141,6 +169,7 @@ namespace mtm
 
     void Game::attack(const GridPoint & src_coordinates, const GridPoint & dst_coordinates)
     {
+        //need to kill some of those lines, make a function for checking errors!
         if (this->isCellOnGameBoard(src_coordinates) == false ||
                  this->isCellOnGameBoard(dst_coordinates) == false )
         {
@@ -152,62 +181,66 @@ namespace mtm
             throw mtm::CellEmpty();
         }
         if (GridPoint::distance(src_coordinates,dst_coordinates) > attacker->range)
-        {
+        {                                               
             throw OutOfRange();
         }
-        if (attacker->ammo <= 0)
-        {
-            throw OutOfAmmo();
-        }        
         std::shared_ptr<Character> main_target = this->findCharacterAtCoordinates(dst_coordinates);
-        
-        for (std::shared_ptr<Character> i : gameboard)
+        for (int i = 0; i < this->height; i++)
         {
-            attacker->attack( i , src_coordinates , dst_coordinates);//we launched the attack, May The Almighty Have Mercy Upon Us :P 
+            bool can_keep_attacking = false;//pass it as reference below!
+            for (int j = 0; j < this->width; j++)
+            {
+                attacker->attack( gameboard[i][j],main_target,src_coordinates,dst_coordinates,can_keep_attacking); 
+                this->removeDeadPlayers();
+                if ( can_keep_attacking == false )
+                {
+                    break;
+                } 
+            }
+            if ( can_keep_attacking == false )
+            {
+                break;
+            }
         }
-        bool *can_reduce_ammo = nullptr;// check what it's initialized to
-        //make sure to update the ammo and the gameboard after launching an attack, AKA remove any player whose health reached 0
-        updaterPlayerAfterAnAttack(gameboard);
-        if ( (can_reduce_ammo != nullptr) && (*can_reduce_ammo == true) )
-        {
-         //does the pointer makes problems?
-            Character::decrementAmmoAfterAttack( (*attacker));
-        }
-        //we have a problem, we don't always need to decrement the ammo after an attack as it is problematic with medic!
         return;
     }
 
-    void Game::updaterPlayerAfterAnAttack(std::vector<std::shared_ptr<Character>> gameboard)
+    void Game::removeDeadPlayers()
     {
-        for ( std::shared_ptr<Character> i : gameboard)
+        for ( int i = 0; i< this->height; i++)
         {
-            if ( (i->health) <= 0)
+            for (int j = 0; j < this->width; j++)
             {
-                gameboard.erase(i);// correct implementation?
+                if ( (this->gameboard[i][j] != nullptr) && 
+                    ( (this->gameboard[i][j]->health) <= 0 ) ) 
+                {
+                    this->gameboard[i][j] = nullptr;
+                }
             }
-            
         }
-        
+        return;   
     }
 
     bool Game::isOver(Team* winningTeam) const
     {
         bool found_player_from_cf = false;
         bool found_player_from_pl = false;
-        for (std::shared_ptr<Character> i : gameboard)
+        for (std::vector<std::shared_ptr<Character>> row_vectors : gameboard)
         {
-            //could be a bit problematic in case there are no players from either team on the gameboard!
-            if ( (i)->team == CROSSFITTERS )
+            for (std::shared_ptr<Character> i : row_vectors)
             {
-                found_player_from_cf = true;
-            }
-            if ( (i)->team == POWERLIFTERS )
-            {
-                found_player_from_pl = true;
+                if ( (i != nullptr) && (i)->team == CROSSFITTERS )
+                {
+                    found_player_from_cf = true;
+                }
+                if ( (i != nullptr) && (i)->team == POWERLIFTERS )
+                {
+                    found_player_from_pl = true;
+                }
             }
         } 
-        bool result = ( ! (found_player_from_cf && found_player_from_pl) );
-        if (result == true)
+        if ( (found_player_from_cf == true && found_player_from_pl == false) ||
+                         (found_player_from_cf == false && found_player_from_pl == true) )
         {
             if (found_player_from_cf == true)
             {
@@ -217,7 +250,77 @@ namespace mtm
             {
                 *winningTeam = POWERLIFTERS;
             }
+            return true;
         }
-        return result;        
+        //else there are players from both teams or player from only one team!
+        return false;           
     }
-};
+
+    Game::Game(const Game &other) : height(other.height), width(other.width),
+                    gameboard(other.height,std::vector<std::shared_ptr<Character>>(other.width,nullptr))
+    {
+        for(int i = 0; i <other.height; i++)
+        {
+            for(int j = 0; j < other.width; j++)
+            {
+                if ( (other.gameboard[i][j]) == nullptr )
+                {
+                    this->gameboard[i][j] = nullptr;
+                }
+                else
+                {
+                    this->gameboard[i][j] = (other.gameboard[i][j])->clone();
+                }
+            }
+        }
+        this->height = other.height;
+        this->width = other.width;
+    }
+
+    Game& Game::operator=(const Game &other)
+    {
+        this->width = other.width;
+        this->height = other.height;
+        for(int i = 0; i < other.height; i++)
+        {
+            for(int j = 0; j < other.width; j++)
+            {
+                if ( (other.gameboard[i][j]) == nullptr )
+                {
+                    this->gameboard[i][j] = nullptr;
+                }
+                else
+                {
+                    this->gameboard[i][j] = (other.gameboard[i][j])->clone();
+                }
+            }
+        }
+        return (*this);
+    }
+
+    std::ostream& operator<<(std::ostream& os, const Game& game)                               
+    {
+        const string EMPTY_SPACE = " ";//correct implementation?
+        std::string gameboard_as_a_string;
+        for (int i = 0; i < game.height; i++)
+        {
+            for (int j = 0; j < game.width; j++)
+            {
+                if (game.gameboard[i][j] == nullptr)
+                {
+                    gameboard_as_a_string += EMPTY_SPACE;
+                }
+                else
+                {
+                    gameboard_as_a_string += (game.gameboard[i][j])->fillCharacterSymbol();
+                }
+            }
+        }
+        int len=gameboard_as_a_string.length();
+        // char* grid_char_to_print=new char[grid_as_string_len+1]; 
+        // strcpy(grid_char_to_print,gameboard_as_a_string);
+        printGameBoard(os,(&gameboard_as_a_string[0]),(&gameboard_as_a_string[len]),game.width);
+        // delete[] grid_char_to_print;      
+        return os;
+    }
+}

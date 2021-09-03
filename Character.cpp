@@ -9,10 +9,9 @@ namespace mtm
 
     // Character::Character() : health(0),ammo(0),power(0),range(0) {};//valid values?
     Character::Character(units_t health, units_t ammo, units_t power, units_t range, Team team,
-     GridPoint coordinates): health(health),ammo(ammo),power(power),
-                                        range(range),team(team),coordinates(coordinates)
+    GridPoint coordinates): health(health),ammo(ammo),power(power),range(range),team(team),coordinates(coordinates)
     {
-        if (health <= 0 || ammo < 0 || power < 0 || range <= 0) 
+        if (health <= 0 || ammo < 0 || power < 0 || range < 0) 
         {
             // is range allowed to be 0? what about team could he receive an illegal argument?
             throw mtm::IllegalArgument();
@@ -23,11 +22,16 @@ namespace mtm
     Character::~Character()
     {
     }
-    void Character::decrementAmmoAfterAttack(Character &attacker)
-    {
-        (attacker.ammo)--;
-        return;
-    }
+    // void Character::decrementAmmoAfterAttack(std::shared_ptr<Character> attacker)
+    // {
+    //     if (attacker == nullptr)
+    //     {
+    //         return;//in case we get here somehow, btu for the sake of things we should never get here if we do our job correctly
+    //     }
+        
+    //     (attacker->ammo)--;
+    //     return;
+    // }
 
 
     
@@ -37,6 +41,6 @@ namespace mtm
 
 
 
-};
+}
 
 
