@@ -10,47 +10,46 @@ namespace mtm
 
     void Sniper::reload() 
     {
-        //I implemented this function in all 3 characters I have, and it's the exact same Implementation
-        //is it considered as code duplication? and how can I solve it if yes?
         this->ammo += AMMO_RELOAD;
         return;
     }
-    void Sniper::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                const GridPoint & dst_coordinates, bool *can_reduce_ammo)
+    void Sniper::attack(std::shared_ptr<Character> temp_target, std::shared_ptr<Character> main_target,
+            const GridPoint & src_coordinates, const GridPoint & dst_coordinates, bool &can_keep_attacking)
     {
-        int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        if ()
+        // int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
+        if (main_target == nullptr || (main_target->team == this->team) )
         {
-            
+            throw IllegalTarget();
         }
-        
-        if ( distance <= this->range )
-        {        
-            if ( ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
-                    && ( GridPoint::distance(target->coordinates,this->coordinates)
-                                                 >= ( (this->range) + ( (this->range)%2 ) ) )  )
-            {
-                //need to check that target != nullptr?
-                if ( target->team == this->team )
-                {
-                    throw IllegalTarget();
-                }
-                (target->health) -= power;
-                (this->hit_targets)++;
-                if ( (this->hit_targets%3) == 0)
-                {
-                    //in order to deal double power!
-                    (target->health) -= power;
-                }
-                (*can_reduce_ammo) = true;// for Sniper as long as we launched an attack we can reduce ammo
-            }
+        bool bool_to_int = (this->range)%MODULO_RANGE;
+        int min_distance = (  (this->range)/MODULO_RANGE +  bool_to_int );
+        int max_distance = this->range;
+        if( ( GridPoint::distance(main_target->coordinates,this->coordinates) < min_distance  )
+                || ( GridPoint::distance(main_target->coordinates,this->coordinates) > max_distance ) )
+        {
+            throw OutOfRange();
         }
 
+        if (this->ammo <= 0)
+        {
+            throw OutOfAmmo();
+        }
+
+        //if we're here then we can attack the target
+        (main_target->health) -= power;
+        (this->hit_targets)++;
+        if ( (this->hit_targets%MODULO_HITS) == 0 && (this->hit_targets != 0) )
+        {
+            //in order to deal double power!
+            (main_target->health) -= power;
+        }
+        (this->ammo)--;// for Sniper as long as we launched an attack we can reduce ammo
+        can_keep_attacking = false;
         return;
     }
 
-    Sniper::Sniper(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team,coordinates)
+    Sniper::Sniper(units_t health, units_t ammo, units_t power, units_t range, Team team)
+     : Character(health,ammo,power,range,team)
     {
 
     }
@@ -66,6 +65,22 @@ namespace mtm
         return false;
     }
 
+    std::string Sniper::fillCharacterSymbol()
+    {
+        if ( this->team == POWERLIFTERS)
+        {
+            return "N";
+        }
+        //else
+        return "n";
+    }
 
 
-};
+    std::shared_ptr<Character> Sniper::clone() const
+    {
+        // return(std::shared_ptr<Sniper>(new mtm::Sniper(*this)));
+        return(std::shared_ptr<Sniper>(new mtm::Sniper(this->health,this->ammo,this->power,this->range,this->team)));
+    }
+
+
+}

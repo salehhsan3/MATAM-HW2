@@ -6,69 +6,59 @@
 using std::string;
 using std::endl;
 
-
 namespace mtm
 { 
-    class Exception : public std::exception
-    {
-        private:
-        string error_message;
-        
-        protected:
-        explicit Exception(const string& name);
-        ~Exception()=default;
-        
-        public:
-        virtual const char* what() const noexcept;
-    };
+    class Exception : public std::exception{};
     
     class IllegalArgument : public Exception
     {
         public:
-        IllegalArgument();
+        const char* what() const noexcept override;
     };
 
     class IllegalCell  : public Exception
     {
         public:
-        IllegalCell();
+        const char* what() const noexcept override;
     };
 
     class CellEmpty  : public Exception
     {
         public:
-        CellEmpty();
+        const char* what() const noexcept override;
     };
 
     class MoveTooFar : public Exception
     {
         public:
-        MoveTooFar();
+        const char* what() const noexcept override;
     };
 
     class CellOccupied  : public Exception
     {
         public:
-        CellOccupied();
+        const char* what() const noexcept override;
     };
 
     class OutOfRange  : public Exception
     {
         public:
-        OutOfRange();
+        const char* what() const noexcept override;
     };
 
     class OutOfAmmo : public Exception
     {
         public:
-        OutOfAmmo();
+        const char* what() const noexcept override;
     };
 
     class IllegalTarget : public Exception
     {
         public:
-        IllegalTarget();
+        const char* what() const noexcept override;
     };
-};
+}
+
+
 
 #endif

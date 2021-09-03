@@ -16,43 +16,37 @@ namespace mtm
 
 
 
-    void Medic::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                                const GridPoint & dst_coordinates, bool *can_reduce_ammo)
+    void Medic::attack(std::shared_ptr<Character> temp_target, std::shared_ptr<Character> main_target,
+            const GridPoint & src_coordinates, const GridPoint & dst_coordinates, bool &can_keep_attacking)
     {
         int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        if (distance == 0)
+        if (this->ammo <= 0)
+        {
+            throw OutOfAmmo();
+        }
+        if (distance == 0 || main_target == nullptr)//he can't attack himself or an empty coordinate
         {
             throw IllegalTarget();
         }
-        
-        if ( (distance <= this->range) )
-        {        
-            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
+
+        if ( (main_target != nullptr) && GridPoint::distance(main_target->coordinates,dst_coordinates) == 0 )
+        {
+            if ( main_target->team != this->team )
             {
-                //need to check attacker != nullptr?
-                if ( (this->ammo > 0) &&  ( target->team != this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
-                {
-                    (target->health) -= power;
-                    (*can_reduce_ammo) = true;
-                }
-            }
-            if ( (this->ammo > 0) &&  ( target->team == this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
-            {
-                if ( (this->ammo > 0) && ( target->team != this->team ) &&
-                                    ( target->coordinates != this->coordinates ) )
-                {
-                    (target->health) += power;
-                    (*can_reduce_ammo) = false;
-                }
+                (main_target->health) -= power;
+                (this->ammo)--;
             }
         }
+        if ( ( main_target->team == this->team ) && ( main_target->coordinates != this->coordinates ) )
+        {
+            (main_target->health) += power;
+        }
+        can_keep_attacking = false;
         return;
     }
 
-    Medic::Medic(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team,coordinates)
+    Medic::Medic(units_t health, units_t ammo, units_t power, units_t range, Team team)
+     : Character(health,ammo,power,range,team)
     {
 
     }
@@ -68,5 +62,20 @@ namespace mtm
         return false;
     }
 
+    std::string Medic::fillCharacterSymbol()
+    {
+        if ( this->team == POWERLIFTERS)
+        {
+            return "M";
+        }
+        //else
+        return "m";
+    }
 
-};
+    std::shared_ptr<Character> Medic::clone() const
+    {
+        // return(std::shared_ptr<Medic>(new mtm::Medic(*this)));
+        return(std::shared_ptr<Medic>(new mtm::Medic(this->health,this->ammo,this->power,this->range,this->team)));
+    }
+
+}
