@@ -6,21 +6,54 @@ using std::endl;
 
 namespace mtm
 {
-    Exception::Exception(const string& name):error_message("A game related error has occurred: " + name){};
-    const char* Exception::what() const noexcept
+    const char* IllegalArgument::what() const noexcept
     {
-        return error_message.c_str();
+        return "A game related error has occurred: IllegalArgument";     
     }
 
-    IllegalArgument::IllegalArgument():Exception("IllegalArgument"){}; //why calling inside initialization not inside {}
-    IllegalCell::IllegalCell():Exception("IllegalCell"){};
-    CellEmpty::CellEmpty():Exception("CellEmpty"){};
-    MoveTooFar::MoveTooFar():Exception("MoveTooFar"){};
-    CellOccupied::CellOccupied():Exception("CellOccupied"){};
-    OutOfRange::OutOfRange():Exception("OutOfRange"){};
-    OutOfAmmo::OutOfAmmo():Exception("OutOfAmmo"){};
-    IllegalTarget::IllegalTarget():Exception("IllegalTarget"){};
+
+    const char* IllegalCell::what() const noexcept
+    {
+        return "A game related error has occurred: IllegalCell";     
+    }
+
+
+    const char* CellEmpty::what() const noexcept
+    {
+        return "A game related error has occurred: CellEmpty";     
+    }
+
+
+    const char* MoveTooFar::what() const noexcept
+    {
+        return "A game related error has occurred: MoveTooFar";     
+    }
+
+
+    const char* CellOccupied::what() const noexcept
+    {
+        return "A game related error has occurred: CellOccupied";     
+    }
+
+
+    const char* OutOfRange::what() const noexcept
+    {
+        return "A game related error has occurred: OutOfRange";     
+    }
+
+
+    const char* OutOfAmmo::what() const noexcept
+    {
+        return "A game related error has occurred: OutOfAmmo";     
+    }
+
+
+    const char* IllegalTarget::what() const noexcept
+    {
+        return "A game related error has occurred: IllegalTarget";     
+    }
+}
 
 
 
-};
+

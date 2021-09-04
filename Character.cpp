@@ -9,12 +9,10 @@ namespace mtm
 
     // Character::Character() : health(0),ammo(0),power(0),range(0) {};//valid values?
     Character::Character(units_t health, units_t ammo, units_t power, units_t range, Team team,
-     GridPoint coordinates): health(health),ammo(ammo),power(power),
-                                        range(range),team(team),coordinates(coordinates)
+    GridPoint coordinates): health(health),ammo(ammo),power(power),range(range),team(team),coordinates(coordinates)
     {
-        if (health <= 0 || ammo < 0 || power < 0 || range <= 0) 
+        if (health <= 0 || ammo < 0 || power < 0 || range < 0) 
         {
-            // is range allowed to be 0? what about team could he receive an illegal argument?
             throw mtm::IllegalArgument();
         }
         
@@ -23,12 +21,13 @@ namespace mtm
     Character::~Character()
     {
     }
-    void Character::decrementAmmoAfterAttack(Character &attacker)
-    {
-        (attacker.ammo)--;
-        return;
-    }
-
+    // void attackNearByPlayerIfYouHaveTheAbility(std::shared_ptr<Character> temp_target,
+    //                                                                 const GridPoint &dst_coordinates)
+    // {
+    //     //for normal characters they shouldn't be able to attack multiple characters, only
+    //     // those that are gifted like soldier may do that!
+    //     return;
+    // }
 
     
 
@@ -37,6 +36,6 @@ namespace mtm
 
 
 
-};
+}
 
 

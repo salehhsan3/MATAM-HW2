@@ -6,11 +6,11 @@
 namespace mtm
 {
 //     Soldier::Soldier();
-    Soldier::Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team, GridPoint coordinates)
-     : Character(health,ammo,power,range,team,coordinates)
+    Soldier::Soldier(units_t health, units_t ammo, units_t power, units_t range, Team team)
+     : Character(health,ammo,power,range,team)
     {
 
-    };
+    }
     
     Soldier::~Soldier()
     {
@@ -36,48 +36,72 @@ namespace mtm
         return false;
     }
 
-    void Soldier::attack(std::shared_ptr<Character> target, const GridPoint & src_coordinates,
-                                            const GridPoint & dst_coordinates, bool *can_reduce_ammo)
+    void Soldier::attack(std::shared_ptr<Character> main_target,const GridPoint & src_coordinates,
+                                     const GridPoint & dst_coordinates, bool &can_keep_attacking)
     {
-        int distance = GridPoint::distance ( src_coordinates,dst_coordinates);
-        bool in_straight_line = isInStraightLine(src_coordinates,dst_coordinates);
-        if (in_straight_line == false)
+        if ( (this->ammo) <= 0)
+        {
+            throw OutOfAmmo();
+        }
+        if ( isInStraightLine(src_coordinates,dst_coordinates) == false)
         {
             throw IllegalTarget();
         }
-        
-        if ( (in_straight_line == true) && (distance <= this->range) )
-        {        
-            if ( GridPoint::distance(target->coordinates,dst_coordinates) == 0 )
-            {
-                if ( (this->ammo > 0) &&  ( target->team != this->team ) && 
-                                    ( target->coordinates != this->coordinates ) )
-                {
-                    (target->health) -= power;
-                }
-            }
-            if ( (GridPoint::distance(target->coordinates,dst_coordinates)  <= ( (this->range)/3) + (range%3) )
-                    && (GridPoint::distance(target->coordinates,dst_coordinates)  > 0) )
-            {
-                if ( (this->ammo > 0) && ( target->team != this->team ) &&
-                                    ( target->coordinates != this->coordinates ) )
-                {
-                    (target->health) -= (power/2);//need to use ceil?
-                }
-            }
-            (*can_reduce_ammo) = true;//for soldier we can attack anything therefore always reduce
+        if ( main_target == nullptr )
+        {
+            (this->ammo)--;
+            can_keep_attacking = true;
+            return;
+        }
+        if ( main_target->team != this->team )
+        {
+            (main_target->health) -= power;
+            (this->ammo)--;
+        }
+        can_keep_attacking = true;
+        return;
+    }
+
+    void Soldier::attackNearByPlayerIfYouHaveTheAbility(std::shared_ptr<Character> temp_target,
+                                                                    const GridPoint &dst_coordinates)
+    {
+        if(temp_target == nullptr)
+        {
+            return;
+        }
+        int ceil_half_power = (((this->power)%MODULO_POWER) == 0) ?
+                ((this->power)/MODULO_POWER) : (((this->power)/MODULO_POWER)+1);
+        int ceil_modulo_range = (((this->range)%MODULO_RANGE) == 0) ?
+                ((this->range)/MODULO_RANGE) : (((this->range)/MODULO_RANGE)+1);
+        if (       (temp_target != nullptr) 
+                && (GridPoint::distance(temp_target->coordinates,dst_coordinates) <= ceil_modulo_range)
+                && (temp_target->team != this->team) )
+        {
+            (temp_target->health) -= ceil_half_power;
         }
         return;
     }
 
     void Soldier::reload() 
     {
-        //I implemented this function in all 3 characters I have, and it's the exact same Implementation
-        //is it considered as code duplication? and how can I solve it if yes?
         this->ammo += AMMO_RELOAD;
         return;
     }
 
-    
+    std::string Soldier::fillCharacterSymbol()
+    {
+        if ( this->team == POWERLIFTERS)
+        {
+            return "S";
+        }
+        //else
+        return "s";
+    }
 
-};
+    std::shared_ptr<Character> Soldier::clone() const
+    {
+        // return(std::shared_ptr<Soldier>(new mtm::Soldier(*this)));
+        return(std::shared_ptr<Soldier>(new mtm::Soldier(this->health,this->ammo,this->power,this->range,this->team)));
+    }
+
+}
